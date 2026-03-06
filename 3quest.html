@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ea66df 0%, #a24b95 100%);
+            background: linear-gradient(135deg, #ea66db 0%, #a24b9b 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -136,7 +136,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1 class="game-title">🏙️ Кызылорда</h1>
+        <h1 class="game-title">🏙️ Қызылорда</h1>
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <div class="mobile-controls">
@@ -155,8 +155,8 @@
         </div>
         
         <div class="controls">
-            <span>WASD</span> или <span>Стрелки</span> - Қозғалу | 
-            <span>E</span> или <span>Пробел</span> - Сөйлесу/Жауап беру
+            <span>WASD</span> или <span>Стрелки</span> - Движение | 
+            <span>E</span> или <span>Пробел</span> - Разговор
         </div>
     </div>
 
@@ -165,6 +165,10 @@
         const ctx = canvas.getContext('2d');
 
         const PLAYER_SPEED = 4;
+
+        // Изображение Годжо
+        const gojoImage = new Image();
+        gojoImage.src = 'https://image.qwenlm.ai/public_source/5a3d3296-b6c1-4f40-8d88-17b0a2ae1a27/121572b57-0950-4e87-9d1f-553f9cb59a0b.png';
 
         // Игрок
         const player = {
@@ -179,7 +183,7 @@
 
         // 3 NPC с одним текстом каждый (все на уровне земли)
         const npcs = [
-            {
+           {
                 x: 200,
                 y: 320,
                 width: 32,
@@ -210,6 +214,19 @@
                 talked: false
             }
         ];
+
+        // Годжо Сатору (появляется после разговора со всеми)
+        let gojo = {
+            x: 400,
+            y: 300,
+            width: 50,
+            height: 80,
+            name: 'Годжо Сатору',
+            dialogue: 'Ё-хо-хо! Я сильнейший! Ты проделала отличную работу, поговорив со всеми жителями. Бірақ сенің жігіттің соңғы әріпті ұмыттып кеттің @tony.stark2032year-дан оқи аласың',
+            talked: false,
+            visible: false,
+            spawnEffect: 0
+        };
 
         // Диалоговое окно
         let dialogueBox = {
@@ -296,8 +313,18 @@
             }
         });
 
+        // Проверка всех NPC
+        function checkAllNPCsTalked() {
+            const allTalked = npcs.every(npc => npc.talked);
+            if (allTalked && !gojo.visible) {
+                gojo.visible = true;
+                gojo.spawnEffect = 60;
+            }
+        }
+
         // Проверка взаимодействия с NPC
         function checkInteraction() {
+            // Проверка обычных NPC
             for (let npc of npcs) {
                 const dx = player.x - npc.x;
                 const dy = player.y - npc.y;
@@ -305,20 +332,39 @@
                 
                 if (distance < 60) {
                     startDialogue(npc);
-                    break;
+                    checkAllNPCsTalked();
+                    return;
+                }
+            }
+
+            // Проверка Годжо
+            if (gojo.visible) {
+                const dx = player.x - gojo.x;
+                const dy = player.y - gojo.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 70) {
+                    startDialogue(gojo);
+                    return;
                 }
             }
         }
 
         // Начало диалога
-        function startDialogue(npc) {
+        function startDialogue(character) {
             dialogueBox.visible = true;
-            dialogueBox.speaker = npc.name;
-            dialogueBox.text = npc.dialogue;
+            dialogueBox.speaker = character.name;
+            dialogueBox.text = character.dialogue;
             dialogueBox.typingIndex = 0;
             dialogueBox.canAdvance = false;
-            dialogueBox.currentNpc = npc;
-            npc.talked = true;
+            dialogueBox.currentNpc = character;
+            
+            if (character !== gojo) {
+                character.talked = true;
+                checkAllNPCsTalked();
+            } else {
+                character.talked = true;
+            }
         }
 
         // Закрытие диалога
@@ -375,6 +421,11 @@
             if (player.isMoving) {
                 player.frame = (player.frame + 0.15) % 4;
             }
+
+            // Эффект появления Годжо
+            if (gojo.spawnEffect > 0) {
+                gojo.spawnEffect--;
+            }
         }
 
         // Отрисовка города
@@ -395,7 +446,7 @@
             ctx.fillRect(0, 250, 80, 250);
             ctx.fillRect(canvas.width - 80, 250, 80, 250);
 
-            // Здания (на заднем плане, выше уровня земли)
+            // Здания
             const buildings = [
                 { x: 10, y: 120, w: 70, h: 130, color: '#E8B4B8' },
                 { x: 90, y: 140, w: 60, h: 110, color: '#B8D4E8' },
@@ -422,7 +473,7 @@
                 ctx.fillRect(building.x - 5, building.y - 8, building.w + 10, 8);
             });
 
-            // Деревья (на тротуарах)
+            // Деревья
             const trees = [
                 { x: 40, y: 320 },
                 { x: 50, y: 420 },
@@ -600,6 +651,66 @@
             });
         }
 
+        // Отрисовка Годжо
+        function drawGojo() {
+            if (!gojo.visible) return;
+
+            ctx.save();
+
+            // Эффект появления
+            if (gojo.spawnEffect > 0) {
+                const alpha = 1 - (gojo.spawnEffect / 60);
+                ctx.globalAlpha = alpha;
+                
+                // Свечение вокруг
+                ctx.shadowColor = '#4169E1';
+                ctx.shadowBlur = 30 + Math.sin(gojo.spawnEffect * 0.2) * 10;
+            }
+
+            // Тень
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(gojo.x + gojo.width/2, gojo.y + gojo.height - 5, 20, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Рисуем Годжо
+            const imgWidth = gojo.width;
+            const imgHeight = gojo.height;
+            
+            if (gojoImage.complete) {
+                ctx.drawImage(gojoImage, gojo.x, gojo.y - 20, imgWidth, imgHeight + 20);
+            } else {
+                // Заглушка если изображение не загрузилось
+                ctx.fillStyle = '#4169E1';
+                ctx.fillRect(gojo.x, gojo.y, gojo.width, gojo.height);
+                ctx.fillStyle = '#FFF';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Годжо', gojo.x + gojo.width/2, gojo.y + gojo.height/2);
+            }
+
+            // Индикатор взаимодействия
+            const dx = player.x - gojo.x;
+            const dy = player.y - gojo.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 70) {
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('💬', gojo.x + gojo.width/2, gojo.y - 15);
+            }
+
+            // Индикатор что уже говорил
+            if (gojo.talked) {
+                ctx.fillStyle = '#4CAF50';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('✓', gojo.x + gojo.width/2 + 20, gojo.y - 15);
+            }
+
+            ctx.restore();
+        }
+
         // Отрисовка диалогового окна
         function drawDialogueBox() {
             if (!dialogueBox.visible) return;
@@ -667,6 +778,7 @@
 
             drawCity();
             drawNPCs();
+            drawGojo();
             drawPlayer();
             drawDialogueBox();
 
