@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Прогулка по городу</title>
+    <title>Кызылорда</title>
     <style>
         * {
             margin: 0;
@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ea66db 0%, #a24b9b 100%);
+            background: linear-gradient(135deg, #ea66df 0%, #a24b95 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -47,6 +47,7 @@
             display: block;
             max-width: 100%;
             height: auto;
+            background: #87CEEB;
         }
 
         .mobile-controls {
@@ -136,7 +137,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1 class="game-title">🏙️ Қызылорда</h1>
+        <h1 class="game-title">🏙️ Кызылорда</h1>
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <div class="mobile-controls">
@@ -155,8 +156,8 @@
         </div>
         
         <div class="controls">
-            <span>WASD</span> или <span>Стрелки</span> - Движение | 
-            <span>E</span> или <span>Пробел</span> - Разговор
+            <span>WASD</span> или <span>Стрелки</span> - Қозғалу | 
+            <span>E</span> или <span>Пробел</span> - Сөйлесу/Жауап беру
         </div>
     </div>
 
@@ -181,36 +182,66 @@
             frame: 0
         };
 
-        // 3 NPC с одним текстом каждый (все на уровне земли)
+        // 6 NPC с диалогами
         const npcs = [
-           {
-                x: 200,
-                y: 320,
+            {
+                x: 120,
+                y: 300,
                 width: 32,
                 height: 48,
                 name: 'Брат Аделя',
-                dialogue: 'Четам Брат міні саған сұрағым әтеште бар әжеде бар Ержүректе жоқ ?',
+                dialogue: 'Четам Брат міні саған сұрағым әтеште бар әжеде бар Ержүректе жоқ?',
                 colorIndex: 0,
                 talked: false
             },
             {
-                x: 550,
-                y: 340,
+                x: 680,
+                y: 300,
                 width: 32,
                 height: 48,
                 name: 'Дастанито Математито',
-                dialogue: 'Ерікпей сабақ оқы Ойын ойнамай',
+                dialogue: 'Ерікпей сабақ оқы! Ойын ойнамай!',
                 colorIndex: 1,
                 talked: false
             },
             {
-                x: 350,
-                y: 420,
+                x: 400,
+                y: 430,
                 width: 32,
                 height: 48,
                 name: 'Гүлнұр тәтең',
-                dialogue: 'Эта буква широка И похожа на жука?Нет, не жука, а на шалаш,Но в алфавите она ',
+                dialogue: 'Эта буква широка, и похожа на жука? Нет, не жука, а на шалаш!',
                 colorIndex: 2,
+                talked: false
+            },
+            {
+                x: 200,
+                y: 380,
+                width: 32,
+                height: 48,
+                name: 'Судья Ахметов',
+                dialogue: 'Сот отырысын ашамын! Тәртіп сақтау керек, балам!',
+                colorIndex: 3,
+                talked: false
+            },
+            {
+                x: 600,
+                y: 380,
+                width: 32,
+                height: 48,
+                name: 'Судья Қалықов',
+                dialogue: 'Әділдік жеңеді! Бірақ алдымен дәлел керек!',
+                colorIndex: 4,
+                talked: false
+            },
+            {
+                x: 400,
+                y: 320,
+                width: 32,
+                height: 48,
+                name: 'Бас Судья',
+                dialogue: 'Шешім шығарылды! Жаза - сабақты жақсы оқу!',
+                colorIndex: 5,
                 talked: false
             }
         ];
@@ -218,11 +249,12 @@
         // Годжо Сатору (появляется после разговора со всеми)
         let gojo = {
             x: 400,
-            y: 300,
+            y: 280,
             width: 50,
             height: 80,
             name: 'Годжо Сатору',
-            dialogue: 'Ё-хо-хо! Я сильнейший! Ты проделала отличную работу, поговорив со всеми жителями. Бірақ сенің жігіттің соңғы әріпті ұмыттып кеттің @tony.stark2032year-дан оқи аласың',
+            dialogue: 'Ё-хо-хо! Я сильнейший! Ты проделала отличную работу, поговорив со всеми жителями Кызылорды!Бірақ сенің жігіттің соңғы әріпті ұмыттып кеттің @tony.stark2032year-дан оқи аласың',
+            talked: false, 
             talked: false,
             visible: false,
             spawnEffect: 0
@@ -234,7 +266,6 @@
             text: '',
             speaker: '',
             typingIndex: 0,
-            typingSpeed: 30,
             canAdvance: false,
             currentNpc: null
         };
@@ -270,7 +301,6 @@
         const btnRight = document.getElementById('btnRight');
         const btnTalk = document.getElementById('btnTalk');
 
-        // Touch события для кнопок
         function addTouchEvents(btn, control) {
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
@@ -280,13 +310,13 @@
                 e.preventDefault();
                 touchControls[control] = false;
             });
-            btn.addEventListener('mousedown', (e) => {
+            btn.addEventListener('mousedown', () => {
                 touchControls[control] = true;
             });
-            btn.addEventListener('mouseup', (e) => {
+            btn.addEventListener('mouseup', () => {
                 touchControls[control] = false;
             });
-            btn.addEventListener('mouseleave', (e) => {
+            btn.addEventListener('mouseleave', () => {
                 touchControls[control] = false;
             });
         }
@@ -305,7 +335,7 @@
             }
         });
 
-        btnTalk.addEventListener('click', (e) => {
+        btnTalk.addEventListener('click', () => {
             if (!dialogueBox.visible) {
                 checkInteraction();
             } else if (dialogueBox.canAdvance) {
@@ -322,7 +352,6 @@
             }
         }
 
-        // Проверка взаимодействия с NPC
         function checkInteraction() {
             // Проверка обычных NPC
             for (let npc of npcs) {
@@ -350,7 +379,6 @@
             }
         }
 
-        // Начало диалога
         function startDialogue(character) {
             dialogueBox.visible = true;
             dialogueBox.speaker = character.name;
@@ -367,13 +395,11 @@
             }
         }
 
-        // Закрытие диалога
         function closeDialogue() {
             dialogueBox.visible = false;
             dialogueBox.currentNpc = null;
         }
 
-        // Обновление игры
         function update() {
             if (dialogueBox.visible) {
                 if (dialogueBox.typingIndex < dialogueBox.text.length) {
@@ -387,7 +413,6 @@
             let dx = 0;
             let dy = 0;
 
-            // Клавиатура и тач
             if (keys['KeyW'] || keys['ArrowUp'] || touchControls.up) {
                 dy = -PLAYER_SPEED;
                 player.direction = 'up';
@@ -428,7 +453,6 @@
             }
         }
 
-        // Отрисовка города
         function drawCity() {
             // Небо
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
@@ -515,7 +539,6 @@
             ctx.setLineDash([]);
         }
 
-        // Отрисовка игрока
         function drawPlayer() {
             ctx.save();
             
@@ -575,12 +598,14 @@
             ctx.restore();
         }
 
-        // Отрисовка NPC
         function drawNPCs() {
             const colors = [
                 { hair: '#808080', skin: '#FFE0BD', top: '#8B4513', bottom: '#4A4A4A' },
                 { hair: '#4A3728', skin: '#FFDAB9', top: '#4169E1', bottom: '#2F4F4F' },
-                { hair: '#D2691E', skin: '#FFE4C4', top: '#FF69B4', bottom: '#87CEEB' }
+                { hair: '#D2691E', skin: '#FFE4C4', top: '#FF69B4', bottom: '#87CEEB' },
+                { hair: '#2C2C2C', skin: '#FFDAB9', top: '#1a1a2e', bottom: '#4a4a4a' },
+                { hair: '#3D3D3D', skin: '#FFE0BD', top: '#2d2d44', bottom: '#3a3a5a' },
+                { hair: '#505050', skin: '#FFDAB9', top: '#0d0d1a', bottom: '#2a2a3a' }
             ];
 
             npcs.forEach((npc, index) => {
@@ -643,7 +668,7 @@
                 // Индикатор что уже говорил
                 if (npc.talked) {
                     ctx.fillStyle = '#4CAF50';
-                    ctx.font = '12px Arial';
+                    ctx.font = 'bold 14px Arial';
                     ctx.fillText('✓', npc.x + npc.width/2 + 15, npc.y - 10);
                 }
 
@@ -651,7 +676,6 @@
             });
         }
 
-        // Отрисовка Годжо
         function drawGojo() {
             if (!gojo.visible) return;
 
@@ -677,7 +701,7 @@
             const imgWidth = gojo.width;
             const imgHeight = gojo.height;
             
-            if (gojoImage.complete) {
+            if (gojoImage.complete && gojoImage.naturalWidth !== 0) {
                 ctx.drawImage(gojoImage, gojo.x, gojo.y - 20, imgWidth, imgHeight + 20);
             } else {
                 // Заглушка если изображение не загрузилось
@@ -708,10 +732,17 @@
                 ctx.fillText('✓', gojo.x + gojo.width/2 + 20, gojo.y - 15);
             }
 
+            // Сообщение о появлении
+            if (gojo.spawnEffect > 0) {
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('✨ Годжо появился! ✨', canvas.width / 2, 100);
+            }
+
             ctx.restore();
         }
 
-        // Отрисовка диалогового окна
         function drawDialogueBox() {
             if (!dialogueBox.visible) return;
 
@@ -722,12 +753,14 @@
 
             // Фон
             ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.beginPath();
             ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 15);
             ctx.fill();
 
             // Граница
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 3;
+            ctx.beginPath();
             ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 15);
             ctx.stroke();
 
@@ -742,7 +775,6 @@
             ctx.font = '14px Arial';
             const text = dialogueBox.text.substring(0, dialogueBox.typingIndex);
             
-            // Перенос текста
             const words = text.split(' ');
             let line = '';
             let lineHeight = 20;
@@ -772,7 +804,6 @@
             }
         }
 
-        // Основной цикл игры
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -787,7 +818,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Запуск игры
         gameLoop();
     </script>
 </body>
