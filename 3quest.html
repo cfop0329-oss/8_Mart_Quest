@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Прогулка по городу</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ea66df 0%, #a24b95 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 100%;
+        }
+
+        .game-title {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #gameCanvas {
+            border: 3px solid #4a4a6a;
+            border-radius: 10px;
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .mobile-controls {
+            display: none;
+            margin-top: 15px;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+
+        .dpad-btn {
+            background: linear-gradient(145deg, #4a4a6a, #3a3a5a);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .dpad-btn:active {
+            transform: scale(0.95);
+            background: linear-gradient(145deg, #3a3a5a, #2a2a4a);
+        }
+
+        .dpad-btn.empty {
+            visibility: hidden;
+        }
+
+        .action-btn {
+            background: linear-gradient(145deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 15px;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 20px 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .controls {
+            color: #aaa;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .controls span {
+            background: #4a4a6a;
+            padding: 3px 8px;
+            border-radius: 5px;
+            margin: 0 3px;
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .game-title {
+                font-size: 14px;
+            }
+            
+            .controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">🏙️ Кызылорда</h1>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div class="mobile-controls">
+            <div class="dpad">
+                <button class="dpad-btn empty"></button>
+                <button class="dpad-btn" id="btnUp">⬆️</button>
+                <button class="dpad-btn empty"></button>
+                <button class="dpad-btn" id="btnLeft">⬅️</button>
+                <button class="dpad-btn empty"></button>
+                <button class="dpad-btn" id="btnRight">➡️</button>
+                <button class="dpad-btn empty"></button>
+                <button class="dpad-btn" id="btnDown">⬇️</button>
+                <button class="dpad-btn empty"></button>
+            </div>
+            <button class="action-btn" id="btnTalk">💬 Сөйлесу</button>
+        </div>
+        
+        <div class="controls">
+            <span>WASD</span> или <span>Стрелки</span> - Қозғалу | 
+            <span>E</span> или <span>Пробел</span> - Сөйлесу/Жауап беру
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const PLAYER_SPEED = 4;
+
+        // Игрок
+        const player = {
+            x: 400,
+            y: 350,
+            width: 32,
+            height: 48,
+            direction: 'down',
+            isMoving: false,
+            frame: 0
+        };
+
+        // 3 NPC с одним текстом каждый (все на уровне земли)
+        const npcs = [
+            {
+                x: 200,
+                y: 320,
+                width: 32,
+                height: 48,
+                name: 'Брат Аделя',
+                dialogue: 'Четам Брат міні саған сұрағым әтеште бар әжеде бар Ержүректе жоқ ?',
+                colorIndex: 0,
+                talked: false
+            },
+            {
+                x: 550,
+                y: 340,
+                width: 32,
+                height: 48,
+                name: 'Дастанито Математито',
+                dialogue: 'Ерікпей сабақ оқы Ойын ойнамай',
+                colorIndex: 1,
+                talked: false
+            },
+            {
+                x: 350,
+                y: 420,
+                width: 32,
+                height: 48,
+                name: 'Гүлнұр тәтең',
+                dialogue: 'Эта буква широка И похожа на жука?Нет, не жука, а на шалаш,Но в алфавите она ',
+                colorIndex: 2,
+                talked: false
+            }
+        ];
+
+        // Диалоговое окно
+        let dialogueBox = {
+            visible: false,
+            text: '',
+            speaker: '',
+            typingIndex: 0,
+            typingSpeed: 30,
+            canAdvance: false,
+            currentNpc: null
+        };
+
+        // Управление
+        const keys = {};
+        const touchControls = {
+            up: false,
+            down: false,
+            left: false,
+            right: false
+        };
+
+        // Клавиатура
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if ((e.code === 'KeyE' || e.code === 'Space') && !dialogueBox.visible) {
+                checkInteraction();
+            } else if (dialogueBox.visible && dialogueBox.canAdvance) {
+                closeDialogue();
+            }
+            e.preventDefault();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Мобильные кнопки
+        const btnUp = document.getElementById('btnUp');
+        const btnDown = document.getElementById('btnDown');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const btnTalk = document.getElementById('btnTalk');
+
+        // Touch события для кнопок
+        function addTouchEvents(btn, control) {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchControls[control] = true;
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touchControls[control] = false;
+            });
+            btn.addEventListener('mousedown', (e) => {
+                touchControls[control] = true;
+            });
+            btn.addEventListener('mouseup', (e) => {
+                touchControls[control] = false;
+            });
+            btn.addEventListener('mouseleave', (e) => {
+                touchControls[control] = false;
+            });
+        }
+
+        addTouchEvents(btnUp, 'up');
+        addTouchEvents(btnDown, 'down');
+        addTouchEvents(btnLeft, 'left');
+        addTouchEvents(btnRight, 'right');
+
+        btnTalk.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!dialogueBox.visible) {
+                checkInteraction();
+            } else if (dialogueBox.canAdvance) {
+                closeDialogue();
+            }
+        });
+
+        btnTalk.addEventListener('click', (e) => {
+            if (!dialogueBox.visible) {
+                checkInteraction();
+            } else if (dialogueBox.canAdvance) {
+                closeDialogue();
+            }
+        });
+
+        // Проверка взаимодействия с NPC
+        function checkInteraction() {
+            for (let npc of npcs) {
+                const dx = player.x - npc.x;
+                const dy = player.y - npc.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 60) {
+                    startDialogue(npc);
+                    break;
+                }
+            }
+        }
+
+        // Начало диалога
+        function startDialogue(npc) {
+            dialogueBox.visible = true;
+            dialogueBox.speaker = npc.name;
+            dialogueBox.text = npc.dialogue;
+            dialogueBox.typingIndex = 0;
+            dialogueBox.canAdvance = false;
+            dialogueBox.currentNpc = npc;
+            npc.talked = true;
+        }
+
+        // Закрытие диалога
+        function closeDialogue() {
+            dialogueBox.visible = false;
+            dialogueBox.currentNpc = null;
+        }
+
+        // Обновление игры
+        function update() {
+            if (dialogueBox.visible) {
+                if (dialogueBox.typingIndex < dialogueBox.text.length) {
+                    dialogueBox.typingIndex++;
+                } else {
+                    dialogueBox.canAdvance = true;
+                }
+                return;
+            }
+
+            let dx = 0;
+            let dy = 0;
+
+            // Клавиатура и тач
+            if (keys['KeyW'] || keys['ArrowUp'] || touchControls.up) {
+                dy = -PLAYER_SPEED;
+                player.direction = 'up';
+                player.isMoving = true;
+            }
+            if (keys['KeyS'] || keys['ArrowDown'] || touchControls.down) {
+                dy = PLAYER_SPEED;
+                player.direction = 'down';
+                player.isMoving = true;
+            }
+            if (keys['KeyA'] || keys['ArrowLeft'] || touchControls.left) {
+                dx = -PLAYER_SPEED;
+                player.direction = 'left';
+                player.isMoving = true;
+            }
+            if (keys['KeyD'] || keys['ArrowRight'] || touchControls.right) {
+                dx = PLAYER_SPEED;
+                player.direction = 'right';
+                player.isMoving = true;
+            }
+
+            if (!keys['KeyW'] && !keys['KeyS'] && !keys['KeyA'] && !keys['KeyD'] &&
+                !keys['ArrowUp'] && !keys['ArrowDown'] && !keys['ArrowLeft'] && !keys['ArrowRight'] &&
+                !touchControls.up && !touchControls.down && !touchControls.left && !touchControls.right) {
+                player.isMoving = false;
+            }
+
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x + dx));
+            player.y = Math.max(250, Math.min(canvas.height - player.height, player.y + dy));
+
+            if (player.isMoving) {
+                player.frame = (player.frame + 0.15) % 4;
+            }
+        }
+
+        // Отрисовка города
+        function drawCity() {
+            // Небо
+            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#E0F6FF');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, 250);
+
+            // Земля/дорога
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(0, 250, canvas.width, 250);
+
+            // Тротуары
+            ctx.fillStyle = '#8B7355';
+            ctx.fillRect(0, 250, 80, 250);
+            ctx.fillRect(canvas.width - 80, 250, 80, 250);
+
+            // Здания (на заднем плане, выше уровня земли)
+            const buildings = [
+                { x: 10, y: 120, w: 70, h: 130, color: '#E8B4B8' },
+                { x: 90, y: 140, w: 60, h: 110, color: '#B8D4E8' },
+                { x: 160, y: 100, w: 80, h: 150, color: '#D4E8B8' },
+                { x: canvas.width - 80, y: 110, w: 70, h: 140, color: '#E8D4B8' },
+                { x: canvas.width - 150, y: 130, w: 60, h: 120, color: '#B8E8D4' },
+                { x: canvas.width - 220, y: 90, w: 80, h: 160, color: '#D4B8E8' }
+            ];
+
+            buildings.forEach(building => {
+                ctx.fillStyle = building.color;
+                ctx.fillRect(building.x, building.y, building.w, building.h);
+                
+                // Окна
+                ctx.fillStyle = '#FFF8DC';
+                for (let wy = building.y + 15; wy < building.y + building.h - 15; wy += 25) {
+                    for (let wx = building.x + 8; wx < building.x + building.w - 8; wx += 20) {
+                        ctx.fillRect(wx, wy, 12, 16);
+                    }
+                }
+                
+                // Крыша
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(building.x - 5, building.y - 8, building.w + 10, 8);
+            });
+
+            // Деревья (на тротуарах)
+            const trees = [
+                { x: 40, y: 320 },
+                { x: 50, y: 420 },
+                { x: canvas.width - 40, y: 340 },
+                { x: canvas.width - 50, y: 440 }
+            ];
+
+            trees.forEach(tree => {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(tree.x - 5, tree.y, 10, 30);
+                
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(tree.x, tree.y - 10, 25, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Скамейки
+            const benches = [
+                { x: 100, y: 280 },
+                { x: canvas.width - 120, y: 300 }
+            ];
+
+            benches.forEach(bench => {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(bench.x, bench.y, 50, 10);
+                ctx.fillRect(bench.x + 5, bench.y + 10, 8, 20);
+                ctx.fillRect(bench.x + 37, bench.y + 10, 8, 20);
+            });
+
+            // Разметка дороги
+            ctx.strokeStyle = '#FFFF00';
+            ctx.setLineDash([15, 15]);
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 250);
+            ctx.lineTo(canvas.width / 2, 500);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Отрисовка игрока
+        function drawPlayer() {
+            ctx.save();
+            
+            // Тень
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(player.x + player.width/2, player.y + player.height - 5, 15, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            const bounce = player.isMoving ? Math.sin(player.frame * Math.PI) * 3 : 0;
+            
+            // Волосы
+            ctx.fillStyle = '#4A3728';
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 15 + bounce, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Лицо
+            ctx.fillStyle = '#FFE0BD';
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 18 + bounce, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Глаза
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2 - 5, player.y + 16 + bounce, 2, 0, Math.PI * 2);
+            ctx.arc(player.x + player.width/2 + 5, player.y + 16 + bounce, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Улыбка
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 20 + bounce, 5, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+
+            // Худи
+            ctx.fillStyle = '#6BB6FF';
+            ctx.fillRect(player.x + 4, player.y + 30 + bounce, player.width - 8, 20);
+
+            // Шорты
+            ctx.fillStyle = '#FFF';
+            ctx.fillRect(player.x + 4, player.y + 50 + bounce, player.width - 8, 10);
+
+            // Ноги
+            ctx.fillStyle = '#FFE0BD';
+            const legOffset = player.isMoving ? Math.sin(player.frame * Math.PI) * 5 : 0;
+            ctx.fillRect(player.x + 8 + legOffset, player.y + 60 + bounce, 6, 12);
+            ctx.fillRect(player.x + 18 - legOffset, player.y + 60 + bounce, 6, 12);
+
+            // Обувь
+            ctx.fillStyle = '#FF4444';
+            ctx.fillRect(player.x + 6 + legOffset, player.y + 70 + bounce, 10, 6);
+            ctx.fillRect(player.x + 16 - legOffset, player.y + 70 + bounce, 10, 6);
+
+            ctx.restore();
+        }
+
+        // Отрисовка NPC
+        function drawNPCs() {
+            const colors = [
+                { hair: '#808080', skin: '#FFE0BD', top: '#8B4513', bottom: '#4A4A4A' },
+                { hair: '#4A3728', skin: '#FFDAB9', top: '#4169E1', bottom: '#2F4F4F' },
+                { hair: '#D2691E', skin: '#FFE4C4', top: '#FF69B4', bottom: '#87CEEB' }
+            ];
+
+            npcs.forEach((npc, index) => {
+                ctx.save();
+                
+                // Тень
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(npc.x + npc.width/2, npc.y + npc.height - 5, 15, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                const color = colors[npc.colorIndex];
+
+                // Волосы
+                ctx.fillStyle = color.hair;
+                ctx.beginPath();
+                ctx.arc(npc.x + npc.width/2, npc.y + 15, 18, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Лицо
+                ctx.fillStyle = color.skin;
+                ctx.beginPath();
+                ctx.arc(npc.x + npc.width/2, npc.y + 18, 14, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Глаза
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(npc.x + npc.width/2 - 5, npc.y + 16, 2, 0, Math.PI * 2);
+                ctx.arc(npc.x + npc.width/2 + 5, npc.y + 16, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Улыбка
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(npc.x + npc.width/2, npc.y + 20, 5, 0.1 * Math.PI, 0.9 * Math.PI);
+                ctx.stroke();
+
+                // Тело
+                ctx.fillStyle = color.top;
+                ctx.fillRect(npc.x + 4, npc.y + 30, npc.width - 8, 20);
+
+                // Низ
+                ctx.fillStyle = color.bottom;
+                ctx.fillRect(npc.x + 4, npc.y + 50, npc.width - 8, 14);
+
+                // Индикатор взаимодействия
+                const dx = player.x - npc.x;
+                const dy = player.y - npc.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 60) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('💬', npc.x + npc.width/2, npc.y - 10);
+                }
+
+                // Индикатор что уже говорил
+                if (npc.talked) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = '12px Arial';
+                    ctx.fillText('✓', npc.x + npc.width/2 + 15, npc.y - 10);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // Отрисовка диалогового окна
+        function drawDialogueBox() {
+            if (!dialogueBox.visible) return;
+
+            const boxWidth = Math.min(500, canvas.width - 40);
+            const boxHeight = 120;
+            const boxX = (canvas.width - boxWidth) / 2;
+            const boxY = canvas.height - boxHeight - 20;
+
+            // Фон
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 15);
+            ctx.fill();
+
+            // Граница
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 15);
+            ctx.stroke();
+
+            // Имя говорящего
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(dialogueBox.speaker, boxX + 15, boxY + 30);
+
+            // Текст диалога
+            ctx.fillStyle = '#FFF';
+            ctx.font = '14px Arial';
+            const text = dialogueBox.text.substring(0, dialogueBox.typingIndex);
+            
+            // Перенос текста
+            const words = text.split(' ');
+            let line = '';
+            let lineHeight = 20;
+            let y = boxY + 55;
+            const maxWidth = boxWidth - 30;
+
+            words.forEach((word, i) => {
+                const testLine = line + word + ' ';
+                const metrics = ctx.measureText(testLine);
+                
+                if (metrics.width > maxWidth && i > 0) {
+                    ctx.fillText(line, boxX + 15, y);
+                    line = word + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            });
+            ctx.fillText(line, boxX + 15, y);
+
+            // Индикатор продолжения
+            if (dialogueBox.canAdvance) {
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText('Нажми чтобы закрыть ✕', boxX + boxWidth - 15, boxY + boxHeight - 15);
+            }
+        }
+
+        // Основной цикл игры
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCity();
+            drawNPCs();
+            drawPlayer();
+            drawDialogueBox();
+
+            update();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Запуск игры
+        gameLoop();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 С 8 Марта! 🌸</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #4a4a4a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Плавающие цветы на фоне */
+        .flower {
+            position: absolute;
+            font-size: 2em;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .flower:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+        .flower:nth-child(2) { top: 20%; right: 10%; animation-delay: 1s; }
+        .flower:nth-child(3) { bottom: 15%; left: 15%; animation-delay: 2s; }
+        .flower:nth-child(4) { bottom: 25%; right: 5%; animation-delay: 3s; }
+        .flower:nth-child(5) { top: 50%; left: 3%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .container {
+            background: linear-gradient(145deg, #fff5f8 0%, #ffe4ec 100%);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(255, 105, 180, 0.3);
+            max-width: 650px;
+            width: 90%;
+            text-align: center;
+            border: 3px solid #ffb6c1;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-decoration {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #ff69b4;
+            margin: 10px 0 30px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3);
+            font-family: 'Georgia', serif;
+        }
+
+        .subtitle {
+            color: #ff85a2;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .riddle-block {
+            margin-bottom: 25px;
+            text-align: left;
+            border-bottom: 2px dashed #ffb6c1;
+            padding-bottom: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .riddle-text {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #6a4a6a;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #fff;
+            border: 2px solid #ffb6c1;
+            color: #4a4a4a;
+            border-radius: 25px;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ff69b4;
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff69b4 0%, #ff85a2 100%);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6);
+        }
+
+        .hidden-reward {
+            display: none;
+            margin-top: 40px;
+            padding: 30px;
+            border: 3px dashed #ff69b4;
+            background: linear-gradient(145deg, #fff5f8 0%, #ffe4ec 100%);
+            border-radius: 20px;
+            animation: fadeIn 2s ease;
+        }
+
+        .symbols {
+            font-size: 3.5em;
+            letter-spacing: 30px;
+            color: #ff69b4;
+            text-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+            margin: 20px 0;
+        }
+
+        .congratulations {
+            font-size: 1.5em;
+            color: #ff69b4;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .heart {
+            color: #ff69b4;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Фоновые цветы -->
+<div class="flower">🌸</div>
+<div class="flower">🌺</div>
+<div class="flower">🌷</div>
+<div class="flower">🌹</div>
+<div class="flower">💐</div>
+
+<div class="container">
+    <div class="header-decoration">🌷 💐 🌸</div>
+    <h1>✨ С 8 МАРТА! ✨</h1>
+    <p class="subtitle">Поздравляем прекрасную Рауан! <span class="heart">❤</span></p>
+    <p>Ответьте на три загадки, чтобы получить 3 символа удачи!</p>
+
+    <!-- Загадка 1 -->
+    <div class="riddle-block">
+        <div class="riddle-text">🌸 1. Ростом мал, но в бою гроза,
+Чистоту любит, как свои глаза.
+В разведке служит, титанов рубит,
+Сильнее его в отряде не будет.</div>
+        <input type="text" id="ans1" placeholder="Ваш ответ...">
+        <div class="error-msg" id="err1">Попробуйте ещё раз, дорогая! 💕</div>
+    </div>
+
+    <!-- Загадка 2 -->
+    <div class="riddle-block">
+        <div class="riddle-text">🌷 2. Саған берген ең бірінші сыйлығым </div>
+        <input type="text" id="ans2" placeholder="Ваш ответ...">
+        <div class="error-msg" id="err2">Попробуйте ещё раз, дорогая! 💕</div>
+    </div>
+
+    <!-- Загадка 3 -->
+    <div class="riddle-block">
+        <div class="riddle-text">🌹 3. Иоу Иоу бұл Мс ***** және Мс *****</div>
+        <input type="text" id="ans3" placeholder="Ваш ответ...">
+        <div class="error-msg" id="err3">Попробуйте ещё раз, дорогая! 💕</div>
+    </div>
+
+    <button onclick="checkAnswers()">🎁 Получить подарок</button>
+
+    <!-- Скрытый блок с символами -->
+    <div class="hidden-reward" id="reward">
+        <div class="congratulations">🎉 Поздравляем! 🎉</div>
+        <p>Вы прошли испытание! Ваши три символа удачи:</p>
+        <div class="symbols">Ω Σ Φ</div>
+        <p style="color: #ff85a2; font-style: italic;">Пусть этот день принесёт вам радость и счастье! 💐</p>
+    </div>
+</div>
+
+<script>
+    function checkAnswers() {
+        const a1 = document.getElementById('ans1').value.toLowerCase().trim();
+        const a2 = document.getElementById('ans2').value.toLowerCase().trim();
+        const a3 = document.getElementById('ans3').value.toLowerCase().trim();
+
+        const correct1 = ["Леви Акерман", "леви", "акерман"];
+        const correct2 = ["чупа-чупс", "чупа-чупс", "чупа чупс", "сен подаркасың", "сен мен үшін подаркасың"];
+        const correct3 = ["$anzh@r Erkosh ", "санжар еркош", "санжар еркөш"];
+        
+
+        let allCorrect = true;
+
+        if (!correct1.includes(a1)) {
+            showError('err1', true);
+            allCorrect = false;
+        } else {
+            showError('err1', false);
+        }
+
+        if (!correct2.includes(a2)) {
+            showError('err2', true);
+            allCorrect = false;
+        } else {
+            showError('err2', false);
+        }
+
+        if (!correct3.includes(a3)) {
+            showError('err3', true);
+            allCorrect = false;
+        } else {
+            showError('err3', false);
+        }
+
+        if (allCorrect) {
+            document.getElementById('reward').style.display = 'block';
+            document.getElementById('reward').scrollIntoView({behavior: "smooth"});
+            
+            // Добавляем конфетти эффект
+            createConfetti();
+        }
+    }
+
+    function showError(id, show) {
+        const el = document.getElementById(id);
+        el.style.display = show ? 'block' : 'none';
+        
+        const input = el.previousElementSibling;
+        if(show) {
+            input.style.borderColor = '#e74c3c';
+        } else {
+            input.style.borderColor = '#ff69b4';
+        }
+    }
+
+    function createConfetti() {
+        const colors = ['#ff69b4', '#ff85a2', '#ffb6c1', '#ffd700', '#ffecd2'];
+        for(let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'fixed';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.top = '-10px';
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.borderRadius = '50%';
+            confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+            document.body.appendChild(confetti);
+        }
+    }
+
+    // Добавляем стиль для падающих конфетти
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
+</body>
+</html>
